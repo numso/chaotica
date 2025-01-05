@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router'
+import { usePages } from '../context/pages'
 
 import type { Route } from './+types/_layout'
 
@@ -9,13 +10,9 @@ export function meta ({}: Route.MetaArgs) {
   ]
 }
 
-const pages = [
-  { id: 'one', label: '1' },
-  { id: 'two', label: '2' },
-  { id: 'three', label: '3' }
-]
-
 export default function Home () {
+  const { pages } = usePages()
+
   return (
     <main className='flex h-screen'>
       <nav className='border-r border-gray-200 p-4 dark:border-gray-700'>
@@ -24,11 +21,17 @@ export default function Home () {
             <NavLink
               key={id}
               to={id}
-              className='relative flex size-10 items-center justify-center rounded-3xl bg-gray-500 transition-all before:absolute before:-left-4 before:h-0 before:w-1 before:rounded-r-full before:bg-white before:transition-all hover:rounded-xl hover:bg-gray-700 before:hover:h-4 [&.active]:rounded-xl [&.active]:bg-gray-700 [&.active]:before:h-8'
+              className='relative flex size-10 items-center justify-center rounded-3xl bg-gray-500 transition-all before:absolute before:-left-4 before:h-0 before:w-1 before:rounded-r-full before:bg-white before:transition-all hover:rounded-xl hover:bg-gray-700 before:hover:h-4 [&.active]:rounded-xl [&.active]:bg-gray-700 [&.active]:before:h-8 overflow-hidden'
             >
               {label}
             </NavLink>
           ))}
+          <NavLink
+            to='new'
+            className='relative flex size-10 items-center justify-center rounded-3xl bg-gray-500 transition-all before:absolute before:-left-4 before:h-0 before:w-1 before:rounded-r-full before:bg-white before:transition-all hover:rounded-xl hover:bg-gray-700 before:hover:h-4 [&.active]:rounded-xl [&.active]:bg-gray-700 [&.active]:before:h-8'
+          >
+            +
+          </NavLink>
         </ul>
       </nav>
       <div className='flex-1'>
