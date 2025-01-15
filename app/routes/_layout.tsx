@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
-import { usePages } from '../context/pages'
 
+import { usePages } from '../context/pages'
 import type { Route } from './+types/_layout'
 
 export function meta ({}: Route.MetaArgs) {
@@ -21,9 +21,9 @@ export default function Home () {
             <NavLink
               key={id}
               to={id}
-              className='relative flex size-10 items-center justify-center rounded-3xl bg-gray-500 transition-all before:absolute before:-left-4 before:h-0 before:w-1 before:rounded-r-full before:bg-white before:transition-all hover:rounded-xl hover:bg-gray-700 before:hover:h-4 [&.active]:rounded-xl [&.active]:bg-gray-700 [&.active]:before:h-8 overflow-hidden'
+              className='relative flex size-10 items-center justify-center rounded-3xl bg-gray-500 transition-all before:absolute before:-left-4 before:h-0 before:w-1 before:rounded-r-full before:bg-white before:transition-all hover:rounded-xl hover:bg-gray-700 before:hover:h-4 [&.active]:rounded-xl [&.active]:bg-gray-700 [&.active]:before:h-8'
             >
-              {label}
+              {label.slice(0, 2).toUpperCase()}
             </NavLink>
           ))}
           <NavLink
