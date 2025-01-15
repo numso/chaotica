@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
+
 import db from '../../db.js'
 
 const PagesContext = createContext()
@@ -29,6 +30,12 @@ export function PagesProvider ({ children }) {
     setPages(updatedPages)
   }
 
+  const updatePage = async page => {
+    await db.pages.update(page.id, page)
+    const updatedPages = await db.pages.toArray()
+    setPages(updatedPages)
+  }
+
   const removePage = async id => {
     await db.pages.delete(id)
     const updatedPages = await db.pages.toArray()
@@ -37,11 +44,12 @@ export function PagesProvider ({ children }) {
 
   const getPage = async id => {
     const page = await db.pages.get(id)
+    if (!page.blocks) page.blocks = []
     return page
   }
 
   return (
-    <PagesContext.Provider value={{ pages, addPage, removePage, getPage }}>
+    <PagesContext.Provider value={{ pages, addPage, updatePage, removePage, getPage }}>
       {children}
     </PagesContext.Provider>
   )
