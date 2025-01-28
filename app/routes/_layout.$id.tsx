@@ -2,8 +2,8 @@ import { motion } from 'motion/react'
 import { nanoid } from 'nanoid'
 import React from 'react'
 import { useParams } from 'react-router'
-
 import { usePages } from '../context/pages'
+import { FlashcardBlock } from '../components/FlashcardBlock'
 
 export default function Page () {
   const { getPage, updatePage } = usePages()
@@ -13,11 +13,7 @@ export default function Page () {
 
   React.useEffect(() => {
     if (!id) return
-    const fetchPage = async () => {
-      const fetchedPage = await getPage(id)
-      setPage(fetchedPage)
-    }
-
+    const fetchPage = async () => setPage(await getPage(id))
     fetchPage()
   }, [id, getPage])
 
@@ -30,9 +26,24 @@ export default function Page () {
         {page.blocks.map(block => (
           <div key={block.id}>
             {block.type === 'text' ? (
-              <p className='max-w-96 rounded-lg bg-blue-700 p-4'>{block.contents}</p>
+              <p className='max-w-96 rounded-lg bg-blue-700 p-4'>
+                {block.contents}
+              </p>
             ) : block.type === 'image' ? (
-              <img src={block.contents} className='max-w-60 rounded-lg bg-blue-700 p-4' />
+              <img
+                src={block.contents}
+                className='max-w-60 rounded-lg bg-blue-700 p-4'
+              />
+            ) : block.type === 'flashcards' ? (
+              <FlashcardBlock
+                cards={block.contents}
+                onUpdate={cards => {
+                  const updatedBlocks = page.blocks.map(b =>
+                    b.id === block.id ? { ...b, contents: cards } : b
+                  )
+                  updatePage({ ...page, blocks: updatedBlocks })
+                }}
+              />
             ) : (
               <div className='rounded-lg bg-blue-700 p-4'>
                 <CodeBlock block={block} />
@@ -55,7 +66,11 @@ export default function Page () {
                   const formData = new FormData(e.target)
                   const type = formData.get('type')
                   const contents = formData.get('contents')
-                  const block = { id: nanoid(), type, contents }
+                  const block = {
+                    id: nanoid(),
+                    type,
+                    contents: type === 'flashcards' ? [] : contents
+                  }
                   updatePage({ ...page, blocks: [...page.blocks, block] })
                   setAdding(false)
                 }}
@@ -71,10 +86,17 @@ export default function Page () {
                   <label className='ml-2'>
                     <input type='radio' name='type' value='code' /> Code
                   </label>
+                  <label className='ml-2'>
+                    <input type='radio' name='type' value='flashcards' />{' '}
+                    Flashcards
+                  </label>
                 </fieldset>
                 <label className='text-sm font-medium'>
                   Contents
-                  <textarea className='block w-full resize-none rounded p-2' name='contents' />
+                  <textarea
+                    className='block w-full resize-none rounded p-2'
+                    name='contents'
+                  />
                 </label>
                 <div className='flex justify-end gap-2'>
                   <button

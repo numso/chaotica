@@ -49,7 +49,9 @@ export function PagesProvider ({ children }) {
   }
 
   return (
-    <PagesContext.Provider value={{ pages, addPage, updatePage, removePage, getPage }}>
+    <PagesContext.Provider
+      value={{ pages, addPage, updatePage, removePage, getPage }}
+    >
       {children}
     </PagesContext.Provider>
   )
