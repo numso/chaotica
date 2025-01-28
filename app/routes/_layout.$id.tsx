@@ -4,6 +4,7 @@ import React from 'react'
 import { useParams } from 'react-router'
 import { usePages } from '../context/pages'
 import { FlashcardBlock } from '../components/FlashcardBlock'
+import { Editor } from '@monaco-editor/react'
 
 export default function Page () {
   const { getPage, updatePage } = usePages()
@@ -11,6 +12,7 @@ export default function Page () {
   const [page, setPage] = React.useState(null)
   const [adding, setAdding] = React.useState(false)
   const [selectedType, setSelectedType] = React.useState('')
+  const [editorContent, setEditorContent] = React.useState('')
 
   React.useEffect(() => {
     if (!id) return
@@ -25,15 +27,16 @@ export default function Page () {
       <h1 className='text-center text-xl font-medium'>{page.label}</h1>
       <div className='flex flex-wrap gap-4'>
         {page.blocks.map(block => (
-          <div key={block.id}>
+          <div key={block.id} className='flex-1 min-w-72 max-w-sm'>
             {block.type === 'text' ? (
-              <p className='max-w-96 rounded-lg bg-blue-700 p-4'>
+              <p className='rounded-lg bg-blue-700 p-3 text-sm'>
                 {block.contents}
               </p>
             ) : block.type === 'image' ? (
               <img
                 src={block.contents}
-                className='max-w-60 rounded-lg bg-blue-700 p-4'
+                className='rounded-lg bg-blue-700 p-3 max-w-xs'
+                alt='Image Block'
               />
             ) : block.type === 'flashcards' ? (
               <FlashcardBlock
@@ -46,27 +49,29 @@ export default function Page () {
                 }}
               />
             ) : (
-              <div className='rounded-lg bg-blue-700 p-4'>
-                <CodeBlock block={block} />
+              <div className='rounded-lg bg-blue-700 p-3'>
+                <div className='h-32 w-full bg-neutral-900 rounded-lg overflow-auto'>
+                  <CodeBlock block={block} />
+                </div>
               </div>
             )}
           </div>
         ))}
-
         <motion.div
           initial={{ width: 40, height: 40 }}
-          animate={{ width: adding ? 400 : 40, height: adding ? 300 : 40 }}
+          animate={{ width: adding ? 500 : 40, height: adding ? 400 : 40 }} // Increased dimensions
           className='overflow-hidden'
         >
           {adding ? (
-            <div className='h-full w-full rounded-lg bg-blue-900 p-3'>
+            <div className='h-full w-full rounded-lg bg-blue-900 p-4'>
               <form
-                className='flex flex-col gap-6'
+                className='flex flex-col gap-4 h-full'
                 onSubmit={e => {
                   e.preventDefault()
                   const formData = new FormData(e.target)
                   const type = formData.get('type')
-                  const contents = formData.get('contents')
+                  const contents =
+                    type === 'code' ? editorContent : formData.get('contents')
                   const block = {
                     id: nanoid(),
                     type,
@@ -76,8 +81,8 @@ export default function Page () {
                   setAdding(false)
                 }}
               >
-                <fieldset className='flex flex-col'>
-                  <legend className='text-sm font-medium'>Type</legend>
+                <fieldset className='flex flex-col text-sm'>
+                  <legend className='font-medium'>Type</legend>
                   <label className='ml-2'>
                     <input
                       type='radio'
@@ -115,22 +120,46 @@ export default function Page () {
                     Flashcards
                   </label>
                 </fieldset>
-                <label className='text-sm font-medium'>
-                  {getContentLabel(selectedType)}
-                  <textarea
-                    className='block w-full resize-none rounded p-2'
-                    name='contents'
-                  />
-                </label>
+                {selectedType === 'code' ? (
+                  <div className='flex flex-col gap-2 flex-1'>
+                    <label className='text-sm font-medium'>Code</label>
+                    <div className='h-48 bg-neutral-900 rounded-lg overflow-hidden'>
+                      <Editor
+                        height='100%'
+                        width='100%'
+                        defaultLanguage='javascript'
+                        theme='vs-dark'
+                        onChange={value => setEditorContent(value || '')}
+                        options={{
+                          minimap: { enabled: false },
+                          scrollBeyondLastLine: false,
+                          fontSize: 14,
+                          lineNumbers: 'on',
+                          wordWrap: 'off',
+                          padding: { top: 8, bottom: 8 }
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <label className='flex flex-col gap-2 flex-1 text-sm'>
+                    <span>{getContentLabel(selectedType)}</span>
+                    <textarea
+                      className='block w-full resize-none rounded p-2 h-24'
+                      name='contents'
+                      rows={5}
+                    />
+                  </label>
+                )}
                 <div className='flex justify-end gap-2'>
                   <button
-                    className='rounded bg-zinc-300 px-2 py-1 text-black hover:bg-zinc-400 active:bg-zinc-500'
+                    className='rounded bg-zinc-300 px-3 py-2 text-black hover:bg-zinc-400 active:bg-zinc-500 text-sm'
                     type='button'
                     onClick={() => setAdding(false)}
                   >
                     Cancel
                   </button>
-                  <button className='rounded bg-zinc-300 px-2 py-1 text-black hover:bg-zinc-400 active:bg-zinc-500'>
+                  <button className='rounded bg-zinc-300 px-3 py-2 text-black hover:bg-zinc-400 active:bg-zinc-500 text-sm'>
                     Save
                   </button>
                 </div>
@@ -167,9 +196,33 @@ function getContentLabel (type: string = '') {
 
 function CodeBlock ({ block }) {
   React.useEffect(() => {
-    const script = document.createElement('script')
-    script.innerHTML = `const $$container = document.getElementById('script-${block.id}');${block.contents}`
-    document.body.appendChild(script)
-  }, [])
-  return <div id={`script-${block.id}`} />
+    const executeCode = () => {
+      try {
+        const executeFunction = new Function(block.contents)
+        executeFunction()
+      } catch (error) {
+        console.error('Error executing code:', error)
+      }
+    }
+    if (block.contents) {
+      executeCode()
+    }
+  }, [block.contents])
+
+  return (
+    <Editor
+      height='100%'
+      width='100%'
+      defaultLanguage='javascript'
+      theme='vs-dark'
+      value={block.contents}
+      options={{
+        readOnly: true,
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        fontSize: 14
+      }}
+      className='rounded overflow-hidden'
+    />
+  )
 }
