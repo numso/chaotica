@@ -10,6 +10,7 @@ export default function Page () {
   const { id } = useParams()
   const [page, setPage] = React.useState(null)
   const [adding, setAdding] = React.useState(false)
+  const [selectedType, setSelectedType] = React.useState('')
 
   React.useEffect(() => {
     if (!id) return
@@ -78,21 +79,44 @@ export default function Page () {
                 <fieldset className='flex flex-col'>
                   <legend className='text-sm font-medium'>Type</legend>
                   <label className='ml-2'>
-                    <input type='radio' name='type' value='text' /> Text
+                    <input
+                      type='radio'
+                      name='type'
+                      value='text'
+                      onChange={e => setSelectedType(e.target.value)}
+                    />{' '}
+                    Text
                   </label>
                   <label className='ml-2'>
-                    <input type='radio' name='type' value='image' /> Image
+                    <input
+                      type='radio'
+                      name='type'
+                      value='image'
+                      onChange={e => setSelectedType(e.target.value)}
+                    />{' '}
+                    Image
                   </label>
                   <label className='ml-2'>
-                    <input type='radio' name='type' value='code' /> Code
+                    <input
+                      type='radio'
+                      name='type'
+                      value='code'
+                      onChange={e => setSelectedType(e.target.value)}
+                    />{' '}
+                    Code
                   </label>
                   <label className='ml-2'>
-                    <input type='radio' name='type' value='flashcards' />{' '}
+                    <input
+                      type='radio'
+                      name='type'
+                      value='flashcards'
+                      onChange={e => setSelectedType(e.target.value)}
+                    />{' '}
                     Flashcards
                   </label>
                 </fieldset>
                 <label className='text-sm font-medium'>
-                  Contents
+                  {getContentLabel(selectedType)}
                   <textarea
                     className='block w-full resize-none rounded p-2'
                     name='contents'
@@ -124,6 +148,21 @@ export default function Page () {
       </div>
     </div>
   )
+}
+
+function getContentLabel (type: string = '') {
+  switch (type) {
+    case 'text':
+      return 'Text'
+    case 'image':
+      return 'Image URL'
+    case 'code':
+      return 'Code'
+    case 'flashcards':
+      return 'Card Collection Title'
+    default:
+      return 'Content'
+  }
 }
 
 function CodeBlock ({ block }) {
