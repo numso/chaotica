@@ -1,10 +1,12 @@
+import { Editor } from '@monaco-editor/react'
 import { motion } from 'motion/react'
 import { nanoid } from 'nanoid'
 import React from 'react'
 import { useParams } from 'react-router'
-import { usePages } from '../context/pages'
+
+import { ChartBlock } from '../components/ChartBlock'
 import { FlashcardBlock } from '../components/FlashcardBlock'
-import { Editor } from '@monaco-editor/react'
+import { usePages } from '../context/pages'
 
 export default function Page () {
   const { getPage, updatePage } = usePages()
@@ -27,15 +29,13 @@ export default function Page () {
       <h1 className='text-center text-xl font-medium'>{page.label}</h1>
       <div className='flex flex-wrap gap-4'>
         {page.blocks.map(block => (
-          <div key={block.id} className='flex-1 min-w-72 max-w-sm'>
+          <div key={block.id} className='min-w-72 max-w-sm flex-1'>
             {block.type === 'text' ? (
-              <p className='rounded-lg bg-blue-700 p-3 text-sm'>
-                {block.contents}
-              </p>
+              <p className='rounded-lg bg-blue-700 p-3 text-sm'>{block.contents}</p>
             ) : block.type === 'image' ? (
               <img
                 src={block.contents}
-                className='rounded-lg bg-blue-700 p-3 max-w-xs'
+                className='max-w-xs rounded-lg bg-blue-700 p-3'
                 alt='Image Block'
               />
             ) : block.type === 'flashcards' ? (
@@ -48,9 +48,19 @@ export default function Page () {
                   updatePage({ ...page, blocks: updatedBlocks })
                 }}
               />
+            ) : block.type === 'chart' ? (
+              <ChartBlock
+                data={block.contents}
+                onUpdate={contents => {
+                  const updatedBlocks = page.blocks.map(b =>
+                    b.id === block.id ? { ...b, contents } : b
+                  )
+                  updatePage({ ...page, blocks: updatedBlocks })
+                }}
+              />
             ) : (
               <div className='rounded-lg bg-blue-700 p-3'>
-                <div className='h-32 w-full bg-neutral-900 rounded-lg overflow-auto'>
+                <div className='h-32 w-full overflow-auto rounded-lg bg-neutral-900'>
                   <CodeBlock block={block} />
                 </div>
               </div>
@@ -65,17 +75,29 @@ export default function Page () {
           {adding ? (
             <div className='h-full w-full rounded-lg bg-blue-900 p-4'>
               <form
-                className='flex flex-col gap-4 h-full'
+                className='flex h-full flex-col gap-4'
                 onSubmit={e => {
                   e.preventDefault()
                   const formData = new FormData(e.target)
                   const type = formData.get('type')
-                  const contents =
-                    type === 'code' ? editorContent : formData.get('contents')
+                  const contents = type === 'code' ? editorContent : formData.get('contents')
                   const block = {
                     id: nanoid(),
                     type,
-                    contents: type === 'flashcards' ? [] : contents
+                    contents:
+                      type === 'flashcards'
+                        ? []
+                        : type === 'chart'
+                          ? {
+                              type: 'bar',
+                              data: [
+                                [1, 2],
+                                [2, 1],
+                                [3, 3],
+                                [4, 4]
+                              ]
+                            }
+                          : contents
                   }
                   updatePage({ ...page, blocks: [...page.blocks, block] })
                   setAdding(false)
@@ -119,11 +141,20 @@ export default function Page () {
                     />{' '}
                     Flashcards
                   </label>
+                  <label className='ml-2'>
+                    <input
+                      type='radio'
+                      name='type'
+                      value='chart'
+                      onChange={e => setSelectedType(e.target.value)}
+                    />{' '}
+                    Chart
+                  </label>
                 </fieldset>
                 {selectedType === 'code' ? (
-                  <div className='flex flex-col gap-2 flex-1'>
+                  <div className='flex flex-1 flex-col gap-2'>
                     <label className='text-sm font-medium'>Code</label>
-                    <div className='h-48 bg-neutral-900 rounded-lg overflow-hidden'>
+                    <div className='h-48 overflow-hidden rounded-lg bg-neutral-900'>
                       <Editor
                         height='100%'
                         width='100%'
@@ -142,10 +173,10 @@ export default function Page () {
                     </div>
                   </div>
                 ) : (
-                  <label className='flex flex-col gap-2 flex-1 text-sm'>
+                  <label className='flex flex-1 flex-col gap-2 text-sm'>
                     <span>{getContentLabel(selectedType)}</span>
                     <textarea
-                      className='block w-full resize-none rounded p-2 h-24'
+                      className='block h-24 w-full resize-none rounded p-2'
                       name='contents'
                       rows={5}
                     />
@@ -153,13 +184,13 @@ export default function Page () {
                 )}
                 <div className='flex justify-end gap-2'>
                   <button
-                    className='rounded bg-zinc-300 px-3 py-2 text-black hover:bg-zinc-400 active:bg-zinc-500 text-sm'
+                    className='rounded bg-zinc-300 px-3 py-2 text-sm text-black hover:bg-zinc-400 active:bg-zinc-500'
                     type='button'
                     onClick={() => setAdding(false)}
                   >
                     Cancel
                   </button>
-                  <button className='rounded bg-zinc-300 px-3 py-2 text-black hover:bg-zinc-400 active:bg-zinc-500 text-sm'>
+                  <button className='rounded bg-zinc-300 px-3 py-2 text-sm text-black hover:bg-zinc-400 active:bg-zinc-500'>
                     Save
                   </button>
                 </div>
@@ -222,7 +253,7 @@ function CodeBlock ({ block }) {
         scrollBeyondLastLine: false,
         fontSize: 14
       }}
-      className='rounded overflow-hidden'
+      className='overflow-hidden rounded'
     />
   )
 }
